@@ -259,3 +259,32 @@ export const updateBlog = catchAsyncErrors(async (req, res, next) => {
     blog,
   });
 });
+
+export const getPopularAuthors = catchAsyncErrors(async (req, res) => {
+  try {
+    const authors = await Blog.aggregate([
+      {
+        $match: { published: true },
+      },
+      {
+        $group: {
+          _id: "$createdBy",
+          authorName: { $first: "$authorName" },
+          authorAvatar: { $first: "$authorAvatar" },
+          blogCount: { $sum: 1 },
+        },
+      },
+      {
+        $sort: { blogCount: -1 },
+      },
+      {
+        $limit: 4,
+      },
+    ]);
+
+    res.json({ authors });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Failed to fetch popular authors" });
+  }
+});
